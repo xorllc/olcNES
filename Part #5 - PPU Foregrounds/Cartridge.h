@@ -59,12 +59,13 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <memory>
 
 
 #include "Mapper_000.h"
-#include "Mapper_002.h"
-#include "Mapper_003.h"
-#include "Mapper_066.h"
+//#include "Mapper_002.h"
+//#include "Mapper_003.h"
+//#include "Mapper_066.h"
 
 class Cartridge
 {

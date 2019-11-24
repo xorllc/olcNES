@@ -55,6 +55,7 @@
 */
 
 #include "olc2C02.h"
+#include <cstring>
 
 olc2C02::olc2C02()
 {
