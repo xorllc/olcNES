@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <array>
-//#include "olc6502.h"
+#include "olc6502.h"
 
 class Bus
 {
@@ -11,7 +11,7 @@ class Bus
         ~Bus();
 
     public:
-        //olc6502 cpu;
+        olc6502 cpu;
         std::array<uint8_t, 64 * 2^10> ram;
 
     public:
