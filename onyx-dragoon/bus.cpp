@@ -3,6 +3,8 @@
 Bus::Bus()
 {
     for(auto &i: ram) i = 0x00;
+
+    cpu.ConnectBus(this);
 }
 Bus::~Bus() {}
 
