@@ -38,6 +38,11 @@ class olc6502
         uint8_t stkp = 0x00;    // Stack Pointer (points to location on the bus)
         uint16_t pc = 0x0000;   // Program Counter
 
+        void reset();           // Reset Interrupt - Forces CPU into a known state
+        void irq();             // Interrupt Request - Executes an instruction at a specific location
+        void nmi();             // Non-Maskable Interrupt Request - As above, but cannot be disabled
+        void clock();           // Perform one clock cycle's worth of update
+
     private:
 
         // Convenience functions to access the status register.
