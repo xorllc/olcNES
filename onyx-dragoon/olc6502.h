@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <string>
+
 class Bus;
 
 class olc6502
@@ -51,9 +54,41 @@ class olc6502
         uint8_t GetFlag(FLAGS6502 f);
         void    SetFlag(FLAGS6502 f, bool v);
 
+        struct INSTRUCTION
+        {
+            std::string name;
+            uint8_t(olc6502::*operate)(void) = nullptr;
+            uint8_t(olc6502::*addrmode)(void) = nullptr;
+            uint8_t cycles = 0;
+        };
+        std::vector<INSTRUCTION> lookup;
+
         Bus *bus = nullptr;
         uint8_t read(uint16_t a);
         void write(uint16_t a, uint8_t d);
+
+        // The read location of data can come from two sources, a memory address, or
+        // its immediately available as part of the instruction. This function decides
+        // depending on address mode of instruction byte
+        uint8_t fetch();
+
+        // Data that has been fetched is stored here. Each address in the 6502 holds a single byte.
+        uint8_t fetched = 0x00;
+
+        // The addressing mode causes this variable to be set with the absolute address that
+        // contains the data to manipulate. This should be separate from the program counter that
+        // holds the next memory address to fetch.
+        uint16_t addr_abs = 0x0000;
+
+        // On the 6502, branch instructions can jump only a certain distance away from where the instruction
+        // was called.
+        uint8_t addr_rel = 0x00;
+
+        // Current opcode that's being handled.
+        uint8_t opcode = 0x00;
+
+        // Number of remaining cycles left for the instruction being executed.
+        uint8_t cycles = 0;
 
     private:
 
