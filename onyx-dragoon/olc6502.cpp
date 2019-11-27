@@ -122,7 +122,23 @@ void olc6502::SetFlag(FLAGS6502 f, bool v)
 }
 
 
-        uint8_t olc6502::IMP(){};    uint8_t olc6502::IMM(){};
+/*
+ * Addressing modes
+ */
+
+/*
+ * Implied addressing mode means no data is a part of the instruction, so,
+ * configuring the address to act on doesn't matter.
+ */
+uint8_t olc6502::IMP()
+{
+    // The state of the CPU and addressable memory could change based on the
+    // contents of the accumulator, so, we need to capture that.
+    fetched = a;
+    return 0;
+}
+
+                                     uint8_t olc6502::IMM(){};
         uint8_t olc6502::ZP0(){};    uint8_t olc6502::ZPX(){};
         uint8_t olc6502::ZPY(){};    uint8_t olc6502::REL(){};
         uint8_t olc6502::ABS(){};    uint8_t olc6502::ABX(){};
