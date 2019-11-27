@@ -16,6 +16,10 @@ olc6502::olc6502()
     // or else it will be much much larger :D
 
     // The table is one big initialiser list of initialiser lists...
+    //
+    // The contents of each item in the initializer list is an initializer list, namely, a vector of instructions.
+    // Each instruction has a human readable mneumonic, a fuction pointer to the instruction to execute, a function pointer
+    // to the addressing mode, and the total number of clock cycles the instruction will take.
     using a = olc6502;
     lookup =
     {
@@ -51,6 +55,42 @@ uint8_t olc6502::read(uint16_t a)
 void olc6502::write(uint16_t a, uint8_t d)
 {
     bus->write(a, d);
+}
+
+void olc6502::clock()
+{
+    // This emulator handles addressable data and configures the entire internal state
+    // of the CPU in a single clock cycle, but still burns through remaining clock cycles
+    // until the entire instruction is complete. In normal hardware, the entire instruction
+    // is executed over several clock cycles, not like how it is here.
+    if (cycles == 0)
+    {
+        // Read the opcode from the next instruction to execute.
+        opcode = read(pc);
+
+        // Increase the program counter to the next instruction to execute.
+        pc++;
+
+        // Get the number of cycles that this instruction will take.
+        cycles = lookup[opcode].cycles;
+
+        // Call the function referenced within the instruction struct
+        // that configures the CPU registers based on the opcode's addressing
+        // mode.
+        // We want to save the result of this function in case we need to
+        // increment the total number of cycles to burn through from the opcode
+        // being handled.
+        uint8_t additional_cycle1 = (this->*lookup[opcode].addrmode)();
+
+        // Now that the addressing mode is configured, execute the instruction
+        // that uses the data at the configured address.
+        uint8_t additional_cycle2 = (this->*lookup[opcode].operate)();
+
+        cycles += (additional_cycle1 & additional_cycle2);
+
+    }
+
+    cycles--;
 }
 
 uint8_t olc6502::GetFlag(FLAGS6502 f)
