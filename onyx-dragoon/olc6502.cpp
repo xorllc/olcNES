@@ -151,7 +151,36 @@ uint8_t olc6502::IMM()
     return 0;
 }
 
-        uint8_t olc6502::ZP0(){};    uint8_t olc6502::ZPX(){};
+/*
+ * Implement zero page addressing. The address holding the data we're interested in
+ * using as a part of the instruction operation's processing is at the first page
+ * of addressable memory, the zero page. So, we want to read the data held in the
+ * next byte referred to by the program counter and set the absolute address accordingly.
+ */
+uint8_t olc6502::ZP0()
+{
+    /*
+     * Read the data referenced by the program counter.
+     */
+    addr_abs = read(pc);
+
+    /*
+     * Increment the program counter for future processing.
+     */
+    pc++;
+
+    /*
+     * Clear the high byte in the absolute address because this is zero page.
+     */
+    addr_abs &= 0x00FF;
+
+    /*
+     * This addressing mode cannot cause extra CPU cycles.
+     */
+    return 0;
+}
+
+                                     uint8_t olc6502::ZPX(){};
         uint8_t olc6502::ZPY(){};    uint8_t olc6502::REL(){};
         uint8_t olc6502::ABS(){};    uint8_t olc6502::ABX(){};
         uint8_t olc6502::ABY(){};    uint8_t olc6502::IND(){};
