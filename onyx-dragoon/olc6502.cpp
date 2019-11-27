@@ -138,7 +138,19 @@ uint8_t olc6502::IMP()
     return 0;
 }
 
-                                     uint8_t olc6502::IMM(){};
+/*
+ * Immediate mode addressing means the data the CPU will use is provided as
+ * a part of the instruction itself. Therefore, the program counter refers
+ * to the data immediately after the opcode in memory.
+ */
+uint8_t olc6502::IMM()
+{
+    // addr_abs contains the instruction to execute when it's needed. Again,
+    // this should not be conflated with the program counter itself.
+    addr_abs = pc++;
+    return 0;
+}
+
         uint8_t olc6502::ZP0(){};    uint8_t olc6502::ZPX(){};
         uint8_t olc6502::ZPY(){};    uint8_t olc6502::REL(){};
         uint8_t olc6502::ABS(){};    uint8_t olc6502::ABX(){};
