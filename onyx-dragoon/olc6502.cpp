@@ -347,7 +347,70 @@ uint8_t olc6502::ABY()
         return 0;
 
 };
-                                     uint8_t olc6502::IND(){};
+
+uint8_t olc6502::IND()
+{
+
+    /**
+     * Indirect addressing mode. Unlike absolute addressing mode,
+     * data provided as an argument to the opcode is a pointer,
+     * which we can dereference to get the absolute address holding
+     * the data that the "operation" part of this instruction should
+     * consume.
+     *
+     * There are two major operations we need to take in indirect
+     * addressing mode:
+     * 1. Assemble the address containing the low byte of the pointer.
+     * 3. Dereference the pointer to get the "real" absolute address
+     *    containing the data that the operation callable needs.
+     */
+
+    /*
+     * Start off as if we're working with ABS().
+     * Assemble the initial address containing the lo byte of the pointer.
+     * Again, the pointer variable is an address itself.
+     */
+    uint16_t lo_byte_of_pointer = read(pc);
+    pc++;
+    uint16_t hi_byte_of_pointer = read(pc);
+    pc++;
+    uint16_t pointer = ( hi_byte_of_pointer << 8 ) | lo_byte_of_pointer;
+
+    /*
+     * "Dereference" the pointer to compute the absolute address
+     * containing the real data on which the operation part of the
+     * instruction should consume.
+     */
+
+    /*
+     * There is, however, a bug in the 6502 in the situation where the
+     * pointer could be right on a page boundary. That is, the low byte
+     * of the pointer could be 0x00FF. So, if 1 is added to the pointer
+     * in order to get the high byte of the absolute address (to be handled
+     * by the instruction later), we will cross a page boundary. The bug is
+     * that this never actually happens: the high byte of the final absolute
+     * address, that is, data in address pointer+1, is instead accessed at the
+     * very beginning of the page instead.
+     * http://nesdev.com/6502bugs.txt
+     */
+    if ( lo_byte_of_pointer == 0x00FF )
+        addr_abs = ( read( pointer & 0xFF00 ) << 8 ) | ( read( pointer + 0 ) );
+
+    /*
+     * Normal. Get the final absolute address from data held in pointer and
+     * pointer + 1.
+     */
+    else
+        addr_abs = ( read( pointer + 1 ) << 8 ) | ( read( pointer + 0 ) );
+
+    /*
+     * No risk of an additional clock cycle.
+     */
+    return 0;
+};
+
+
+
         uint8_t olc6502::IZX(){};    uint8_t olc6502::IZY(){};
         uint8_t olc6502::REL(){};
 
