@@ -239,10 +239,47 @@ uint8_t olc6502::ZPY()
     return 0;
 };
 
-                                     uint8_t olc6502::REL(){};
-        uint8_t olc6502::ABS(){};    uint8_t olc6502::ABX(){};
+uint8_t olc6502::ABS()
+{
+    /**
+     * Absolute addressing mode allows us to capture the data based on the
+     * arguments provided to the instruction. Unlike IMM(), where the
+     * data is provided directly to the opcode, the data is held somewhere
+     * in the addressable range for ABS() mode.
+     */
+
+    /**
+     * Read the low byte of the address containing the data we want
+     * and increment the program counter. The 6502 follows a little
+     * endian architecture, so, low bytes are read in first.
+     */
+    uint16_t lo = read(pc);
+    pc++;
+
+    /**
+     * Do the same for the hi byte and increment the program counter
+     * to the next address.
+     */
+    uint16_t hi = read(pc);
+    pc++;
+
+    /**
+     * The absolute address containing the data we want, then, is
+     * assembled from the bytes read.
+     */
+    addr_abs = ( hi << 8 ) | lo;
+
+    /**
+     * No risk of an extra clock cycle penalty for this addressing mode.
+     */
+    return 0;
+
+};
+
+                                     uint8_t olc6502::ABX(){};
         uint8_t olc6502::ABY(){};    uint8_t olc6502::IND(){};
         uint8_t olc6502::IZX(){};    uint8_t olc6502::IZY(){};
+        uint8_t olc6502::REL(){};
 
         uint8_t olc6502::ADC(){};    uint8_t olc6502::AND(){};    uint8_t olc6502::ASL(){};    uint8_t olc6502::BCC(){};
         uint8_t olc6502::BCS(){};    uint8_t olc6502::BEQ(){};    uint8_t olc6502::BIT(){};    uint8_t olc6502::BMI(){};
