@@ -276,8 +276,78 @@ uint8_t olc6502::ABS()
 
 };
 
-                                     uint8_t olc6502::ABX(){};
-        uint8_t olc6502::ABY(){};    uint8_t olc6502::IND(){};
+uint8_t olc6502::ABX()
+{
+    /**
+     * Implement absolute addressing mode with X offset.
+     * Most of the code reads like the ABS() function, but with
+     * an important distinction later.
+     */
+
+    /*
+     * Read the low byte from the program counter
+     * and increment the program counter.
+     */
+    uint16_t lo = read(pc);
+    pc++;
+
+    /*
+     * Read the hi byte from the program counter.
+     */
+    uint16_t hi = read(pc);
+    pc++;
+
+    /*
+     * Compute the new absolute base address.
+     */
+    addr_abs = ( hi << 8 ) | lo;
+
+    /*
+     * Offset the address by the contents of the x register
+     * to get a new absolute address. However...because the
+     * low byte of the computed result abs_addr + x may
+     * overflow into the high byte, a page boundary may be
+     * crossed.
+     */
+    addr_abs += x;
+
+    /**
+     * If a page boundary was crossed, we want to return
+     * that this addressing mode may be responsible for
+     * an additional clock cycle. Otherwise, return
+     * 0 to indicate no chance an additional cycle is needed.
+     *
+     * Why? Ask the 6502 designers.
+     */
+    if ( ( addr_abs & 0xFF00 ) != ( hi << 8 ) )
+        return 1;
+    else
+        return 0;
+};
+
+uint8_t olc6502::ABY()
+{
+    /**
+     * Implement the same code as above, but using y to
+     * offset the absolute address, not x.
+     */
+    uint16_t lo = read(pc);
+    pc++;
+
+    uint16_t hi = read(pc);
+    pc++;
+
+    addr_abs = ( hi << 8 ) | lo;
+
+    addr_abs += y;
+
+    if ( ( addr_abs & 0xFF00 ) != ( hi << 8 ) )
+        return 1;
+    else
+        return 0;
+
+};
+                                     uint8_t olc6502::IND(){};
         uint8_t olc6502::IZX(){};    uint8_t olc6502::IZY(){};
         uint8_t olc6502::REL(){};
 
