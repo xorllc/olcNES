@@ -180,8 +180,66 @@ uint8_t olc6502::ZP0()
     return 0;
 }
 
-                                     uint8_t olc6502::ZPX(){};
-        uint8_t olc6502::ZPY(){};    uint8_t olc6502::REL(){};
+uint8_t olc6502::ZPX()
+{
+
+    /*
+     * ZPX() and ZPY() are useful in assembly language to iterate over
+     * a collection, like an array or list. because these collections
+     * are in the zero page, it is cheap to access them.
+     */
+
+    /*
+     * Read the data referenced by the program counter.
+     * Unlike plain zero-page mode ( ZP0() ), we access the
+     * data not at the address referenced by the program counter,
+     * but at the address offset from the program counter by whatever
+     * number is stored in x.
+     */
+    addr_abs = ( read(pc) + x );
+
+    /*
+     * Increment the program counter for future processing.
+     */
+    pc++;
+
+    /*
+     * Clear the high byte in the absolute address because this is zero page.
+     */
+    addr_abs &= 0x00FF;
+
+    /*
+     * This addressing mode cannot cause extra CPU cycles.
+     */
+    return 0;
+};
+
+uint8_t olc6502::ZPY()
+{
+    /*
+     * Perform the same steps as ZPX(), but indexing from the
+     * zero page addresses is relative to the contents of y.
+     */
+    addr_abs = ( read(pc) + y );
+
+    /*
+     * Increment the program counter.
+     */
+    pc++;
+
+    /*
+     * Wipe out the high byte of the absolute address just in case.
+     * Again, we're only interested in zero page.
+     */
+    addr_abs &= 0x00FF;
+
+    /*
+     * No (risk of) additional clock cycle for this instruction either.
+     */
+    return 0;
+};
+
+                                     uint8_t olc6502::REL(){};
         uint8_t olc6502::ABS(){};    uint8_t olc6502::ABX(){};
         uint8_t olc6502::ABY(){};    uint8_t olc6502::IND(){};
         uint8_t olc6502::IZX(){};    uint8_t olc6502::IZY(){};
