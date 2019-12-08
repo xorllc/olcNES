@@ -409,9 +409,45 @@ uint8_t olc6502::IND()
     return 0;
 };
 
+uint8_t olc6502::IZX()
+{
+    /**
+     * Indirect zero page with x offset.
+     * In IZX(), x offsets the pointer, but in IZY(),
+     * y offsets the final absolute address.
+     *
+     * Note that ZPX() gets the address by adding x to a byte
+     * that is read from the pc. In IZX(), we need to read
+     * to get the byte/ZP address, go to ZP, then use X to determine
+     * the high and low bytes of the address containing the "real"
+     * ZP address.
+     */
 
+    /**
+     * Like usual, see what data the program counter gives us.
+     * This data does _not_refer to an absolute address, rather,
+     * a zero-page pointer.
+     */
+    uint16_t zp_pointer = read(pc);
+    pc++;
 
-        uint8_t olc6502::IZX(){};    uint8_t olc6502::IZY(){};
+    /**
+     * Read the low byte of the absolute adddress from the zero-page pointer,
+     * offset by x.
+     */
+    uint16_t lo = read( ( (uint16_t)zp_pointer + (uint16_t)x ) & 0x00FF );
+
+    /**
+     * The hi byte is also in zero page, starting from the pointer, then x, then 1.
+     * offset by x.
+     */
+    uint16_t hi = read( ( (uint16_t)zp_pointer + (uint16_t)x + 1 ) & 0x00FF );
+
+    addr_abs = ( hi << 8 ) | lo;
+
+    return 0;
+};
+                                     uint8_t olc6502::IZY(){};
         uint8_t olc6502::REL(){};
 
         uint8_t olc6502::ADC(){};    uint8_t olc6502::AND(){};    uint8_t olc6502::ASL(){};    uint8_t olc6502::BCC(){};
