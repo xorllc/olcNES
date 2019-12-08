@@ -447,7 +447,46 @@ uint8_t olc6502::IZX()
 
     return 0;
 };
-                                     uint8_t olc6502::IZY(){};
+
+uint8_t olc6502::IZY()
+{
+    /**
+     * Indirect zero page with y offset.
+     * In IZX(), x offsets the pointer, but in IZY(),
+     * y offsets the final absolute address.
+     */
+
+    /*
+     * Get the zero page pointer and move the pc.
+     */
+    uint16_t zp_pointer = read(pc);
+    pc++;
+
+    /*
+     * Read the low byte and high byte to get the initial absolute address.
+     * Again, the offset comes after determining the address from the pointer,
+     * not before.
+     */
+    uint16_t lo = read( uint16_t(zp_pointer + 0) & 0x00FF );
+    uint16_t hi = read( uint16_t(zp_pointer + 1) & 0x00FF );
+
+    /*
+     * Assemble the absolute address and then offset it by y.
+     */
+    addr_abs = ( hi << 8 ) | lo;
+    addr_abs += y;
+
+    /*
+     * We need to check if the act of offsetting the
+     * absolute address by y causes a page boundary to be crossed,
+     * and return 1 if so.
+     */
+    if ((addr_abs & 0xFF00) != (hi << 8))
+        return 1;
+    else
+        return 0;
+};
+
         uint8_t olc6502::REL(){};
 
         uint8_t olc6502::ADC(){};    uint8_t olc6502::AND(){};    uint8_t olc6502::ASL(){};    uint8_t olc6502::BCC(){};
