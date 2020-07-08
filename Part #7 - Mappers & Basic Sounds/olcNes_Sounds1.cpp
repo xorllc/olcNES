@@ -72,7 +72,7 @@ class Demo_olcNES : public olc::PixelGameEngine
 public:
 	Demo_olcNES() { sAppName = "olcNES Sound Demonstration"; }
 
-private: 
+private:
 	// The NES
 	Bus nes;
 	std::shared_ptr<Cartridge> cart;
@@ -84,7 +84,7 @@ private:
 	std::list<uint16_t> audio[4];
 	float fAccumulatedTime = 0.0f;
 
-private: 
+private:
 	// Support Utilities
 	std::map<uint16_t, std::string> mapAsm;
 
@@ -199,29 +199,29 @@ private:
 	bool OnUserCreate() override
 	{
 		// Load the cartridge
-		cart = std::make_shared<Cartridge>("roms/smb3.nes");
-		
+		cart = std::make_shared<Cartridge>("roms/dt.nes");
+
 		if (!cart->ImageValid())
 			return false;
 
 		// Insert into NES
 		nes.insertCartridge(cart);
-					
+
 		// Extract dissassembly
 		//mapAsm = nes.cpu.disassemble(0x0000, 0xFFFF);
 
-		
+
 
 		for (int i = 0; i < 4; i++)
-		{			
+		{
 			for (int j = 0; j < 120; j++)
 				audio[i].push_back(0);
 		}
-		
+
 		// Reset NES
 		nes.reset();
 
-		// Initialise PGEX sound system, and give it a function to 
+		// Initialise PGEX sound system, and give it a function to
 		// call which returns a sound sample on demand
 		pInstance = this;
 		nes.SetSampleFrequency(44100);
@@ -303,9 +303,9 @@ private:
 		const int nSwatchSize = 6;
 		for (int p = 0; p < 8; p++) // For each palette
 			for(int s = 0; s < 4; s++) // For each index
-				FillRect(516 + p * (nSwatchSize * 5) + s * nSwatchSize, 340, 
+				FillRect(516 + p * (nSwatchSize * 5) + s * nSwatchSize, 340,
 					nSwatchSize, nSwatchSize, nes.ppu.GetColourFromPaletteRam(p, s));
-		
+
 		// Draw selection reticule around selected palette
 		DrawRect(516 + nSelectedPalette * (nSwatchSize * 5) - 1, 339, (nSwatchSize * 4), nSwatchSize, olc::WHITE);
 

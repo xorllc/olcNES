@@ -59,6 +59,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <memory>
 
 
 #include "Mapper_000.h"
@@ -70,7 +71,7 @@
 
 class Cartridge
 {
-public:	
+public:
 	Cartridge(const std::string& sFileName);
 	~Cartridge();
 
@@ -78,7 +79,7 @@ public:
 public:
 	bool ImageValid();
 
-	
+
 
 private:
 	bool bImageValid = false;
@@ -110,4 +111,3 @@ public:
 
 	std::shared_ptr<Mapper> GetMapper();
 };
-

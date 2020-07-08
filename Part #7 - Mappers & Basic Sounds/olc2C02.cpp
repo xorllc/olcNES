@@ -55,6 +55,7 @@
 */
 
 #include "olc2C02.h"
+#include <cstring>
 
 olc2C02::olc2C02()
 {
@@ -149,15 +150,15 @@ olc::Sprite& olc2C02::GetPatternTable(uint8_t i, uint8_t palette)
 	// emulation and using it does not change the systems state, though
 	// it gets all the data it needs from the live system. Consequently,
 	// if the game has not yet established palettes or mapped to relevant
-	// CHR ROM banks, the sprite may look empty. This approach permits a 
-	// "live" extraction of the pattern table exactly how the NES, and 
+	// CHR ROM banks, the sprite may look empty. This approach permits a
+	// "live" extraction of the pattern table exactly how the NES, and
 	// ultimately the player would see it.
 
 	// A tile consists of 8x8 pixels. On the NES, pixels are 2 bits, which
 	// gives an index into 4 different colours of a specific palette. There
 	// are 8 palettes to choose from. Colour "0" in each palette is effectively
 	// considered transparent, as those locations in memory "mirror" the global
-	// background colour being used. This mechanics of this are shown in 
+	// background colour being used. This mechanics of this are shown in
 	// detail in ppuRead() & ppuWrite()
 
 	// Characters on NES
@@ -190,7 +191,7 @@ olc::Sprite& olc2C02::GetPatternTable(uint8_t i, uint8_t palette)
 			for (uint16_t row = 0; row < 8; row++)
 			{
 				// For each row, we need to read both bit planes of the character
-				// in order to extract the least significant and most significant 
+				// in order to extract the least significant and most significant
 				// bits of the 2 bit pixel value. in the CHR ROM, each character
 				// is stored as 64 bits of lsb, followed by 64 bits of msb. This
 				// conveniently means that two corresponding rows are always 8
@@ -220,7 +221,7 @@ olc::Sprite& olc2C02::GetPatternTable(uint8_t i, uint8_t palette)
 						nTileX * 8 + (7 - col), // Because we are using the lsb of the row word first
 												// we are effectively reading the row from right
 												// to left, so we need to draw the row "backwards"
-						nTileY * 8 + row, 
+						nTileY * 8 + row,
 						GetColourFromPaletteRam(palette, pixel)
 					);
 				}
@@ -297,16 +298,16 @@ uint8_t olc2C02::cpuRead(uint16_t addr, bool rdonly)
 		{
 			// Control - Not readable
 		case 0x0000: break;
-		
+
 			// Mask - Not Readable
 		case 0x0001: break;
-		
+
 			// Status
 		case 0x0002:
 			// Reading from the status register has the effect of resetting
 			// different parts of the circuit. Only the top three bits
 			// contain status information, however it is possible that
-			// some "noise" gets picked up on the bottom 5 bits which 
+			// some "noise" gets picked up on the bottom 5 bits which
 			// represent the last PPU bus transaction. Some games "may"
 			// use this noise as valid data (even though they probably
 			// shouldn't)
@@ -323,7 +324,7 @@ uint8_t olc2C02::cpuRead(uint16_t addr, bool rdonly)
 		case 0x0003: break;
 
 			// OAM Data
-		case 0x0004: 
+		case 0x0004:
 			data = pOAM[oam_addr];
 			break;
 
@@ -334,9 +335,9 @@ uint8_t olc2C02::cpuRead(uint16_t addr, bool rdonly)
 		case 0x0006: break;
 
 			// PPU Data
-		case 0x0007: 
-			// Reads from the NameTable ram get delayed one cycle, 
-			// so output buffer which contains the data from the 
+		case 0x0007:
+			// Reads from the NameTable ram get delayed one cycle,
+			// so output buffer which contains the data from the
 			// previous read request
 			data = ppu_data_buffer;
 			// then update the buffer for next time
@@ -568,7 +569,7 @@ void olc2C02::reset()
 void olc2C02::clock()
 {
 	// As we progress through scanlines and cycles, the PPU is effectively
-	// a state machine going through the motions of fetching background 
+	// a state machine going through the motions of fetching background
 	// information and sprite information, compositing them into a pixel
 	// to be output.
 
@@ -580,10 +581,10 @@ void olc2C02::clock()
 	// Increment the background tile "pointer" one tile/column horizontally
 	auto IncrementScrollX = [&]()
 	{
-		// Note: pixel perfect scrolling horizontally is handled by the 
-		// data shifters. Here we are operating in the spatial domain of 
+		// Note: pixel perfect scrolling horizontally is handled by the
+		// data shifters. Here we are operating in the spatial domain of
 		// tiles, 8x8 pixel blocks.
-		
+
 		// Ony if rendering is enabled
 		if (mask.render_background || mask.render_sprites)
 		{
@@ -613,9 +614,9 @@ void olc2C02::clock()
 		// is 32x30 tiles, but in memory there is enough room for 32x32 tiles.
 		// The bottom two rows of tiles are in fact not tiles at all, they
 		// contain the "attribute" information for the entire table. This is
-		// information that describes which palettes are used for different 
+		// information that describes which palettes are used for different
 		// regions of the nametable.
-		
+
 		// In addition, the NES doesnt scroll vertically in chunks of 8 pixels
 		// i.e. the height of a tile, it can perform fine scrolling by using
 		// the fine_y component of the register. This means an increment in Y
@@ -700,7 +701,7 @@ void olc2C02::clock()
 	// Prime the "in-effect" background tile shifters ready for outputting next
 	// 8 pixels in scanline.
 	auto LoadBackgroundShifters = [&]()
-	{	
+	{
 		// Each PPU update we calculate one pixel. These shifters shift 1 bit along
 		// feeding the pixel compositor with the binary information it needs. Its
 		// 16 bits wide, because the top 8 bits are the current 8 pixels being drawn
@@ -713,8 +714,8 @@ void olc2C02::clock()
 
 		// Attribute bits do not change per pixel, rather they change every 8 pixels
 		// but are synchronised with the pattern shifters for convenience, so here
-		// we take the bottom 2 bits of the attribute word which represent which 
-		// palette is being used for the current 8 pixels and the next 8 pixels, and 
+		// we take the bottom 2 bits of the attribute word which represent which
+		// palette is being used for the current 8 pixels and the next 8 pixels, and
 		// "inflate" them to 8 bit words.
 		bg_shifter_attrib_lo  = (bg_shifter_attrib_lo & 0xFF00) | ((bg_next_tile_attrib & 0b01) ? 0xFF : 0x00);
 		bg_shifter_attrib_hi  = (bg_shifter_attrib_hi & 0xFF00) | ((bg_next_tile_attrib & 0b10) ? 0xFF : 0x00);
@@ -756,12 +757,12 @@ void olc2C02::clock()
 		}
 	};
 
-	
+
 
 	// All but 1 of the secanlines is visible to the user. The pre-render scanline
 	// at -1, is used to configure the "shifters" for the first visible scanline, 0.
 	if (scanline >= -1 && scanline < 240)
-	{		
+	{
 		// Background Rendering ======================================================
 
 		if (scanline == 0 && cycle == 0 && odd_frame && (mask.render_background || mask.render_sprites))
@@ -777,7 +778,7 @@ void olc2C02::clock()
 
 			// Clear sprite overflow flag
 			status.sprite_overflow = 0;
-			
+
 			// Clear the sprite zero hit flag
 			status.sprite_zero_hit = 0;
 
@@ -793,8 +794,8 @@ void olc2C02::clock()
 		if ((cycle >= 2 && cycle < 258) || (cycle >= 321 && cycle < 338))
 		{
 			UpdateShifters();
-			
-			
+
+
 			// In these cycles we are collecting and working with visible data
 			// The "shifters" have been preloaded by the end of the previous
 			// scanline with the data for the start of this scanline. Once we
@@ -835,14 +836,14 @@ void olc2C02::clock()
 				//   |                |                |
 				//   +----------------+----------------+
 				//
-				// This means there are 4096 potential locations in this array, which 
+				// This means there are 4096 potential locations in this array, which
 				// just so happens to be 2^12!
 				break;
 			case 2:
 				// Fetch the next background tile attribute. OK, so this one is a bit
 				// more involved :P
 
-				// Recall that each nametable has two rows of cells that are not tile 
+				// Recall that each nametable has two rows of cells that are not tile
 				// information, instead they represent the attribute information that
 				// indicates which palettes are applied to which area on the screen.
 				// Importantly (and frustratingly) there is not a 1 to 1 correspondance
@@ -860,7 +861,7 @@ void olc2C02::clock()
 
 				// As before when choosing the tile ID, we can use the bottom 12 bits of
 				// the loopy register, but we need to make the implementation "coarser"
-				// because instead of a specific tile, we want the attribute byte for a 
+				// because instead of a specific tile, we want the attribute byte for a
 				// group of 4x4 tiles, or in other words, we divide our 32x32 address
 				// by 4 to give us an equivalent 8x8 address, and we offset this address
 				// into the attribute section of the target nametable.
@@ -868,9 +869,9 @@ void olc2C02::clock()
 				// Reconstruct the 12 bit loopy address into an offset into the
 				// attribute memory
 
-				// "(vram_addr.coarse_x >> 2)"        : integer divide coarse x by 4, 
+				// "(vram_addr.coarse_x >> 2)"        : integer divide coarse x by 4,
 				//                                      from 5 bits to 3 bits
-				// "((vram_addr.coarse_y >> 2) << 3)" : integer divide coarse y by 4, 
+				// "((vram_addr.coarse_y >> 2) << 3)" : integer divide coarse y by 4,
 				//                                      from 5 bits to 3 bits,
 				//                                      shift to make room for coarse x
 
@@ -878,12 +879,12 @@ void olc2C02::clock()
 
 				// All attribute memory begins at 0x03C0 within a nametable, so OR with
 				// result to select target nametable, and attribute byte offset. Finally
-				// OR with 0x2000 to offset into nametable address space on PPU bus.				
-				bg_next_tile_attrib = ppuRead(0x23C0 | (vram_addr.nametable_y << 11) 
-					                                 | (vram_addr.nametable_x << 10) 
-					                                 | ((vram_addr.coarse_y >> 2) << 3) 
+				// OR with 0x2000 to offset into nametable address space on PPU bus.
+				bg_next_tile_attrib = ppuRead(0x23C0 | (vram_addr.nametable_y << 11)
+					                                 | (vram_addr.nametable_x << 10)
+					                                 | ((vram_addr.coarse_y >> 2) << 3)
 					                                 | (vram_addr.coarse_x >> 2));
-				
+
 				// Right we've read the correct attribute byte for a specified address,
 				// but the byte itself is broken down further into the 2x2 tile groups
 				// in the 4x4 attribute zone.
@@ -903,7 +904,7 @@ void olc2C02::clock()
 				// tiles. We know if "coarse y % 4" < 2 we are in the top half else bottom half.
 				// Likewise if "coarse x % 4" < 2 we are in the left half else right half.
 				// Ultimately we want the bottom two bits of our attribute word to be the
-				// palette selected. So shift as required...				
+				// palette selected. So shift as required...
 				if (vram_addr.coarse_y & 0x02) bg_next_tile_attrib >>= 4;
 				if (vram_addr.coarse_x & 0x02) bg_next_tile_attrib >>= 2;
 				bg_next_tile_attrib &= 0x03;
@@ -911,19 +912,19 @@ void olc2C02::clock()
 
 				// Compared to the last two, the next two are the easy ones... :P
 
-			case 4: 
+			case 4:
 				// Fetch the next background tile LSB bit plane from the pattern memory
-				// The Tile ID has been read from the nametable. We will use this id to 
+				// The Tile ID has been read from the nametable. We will use this id to
 				// index into the pattern memory to find the correct sprite (assuming
 				// the sprites lie on 8x8 pixel boundaries in that memory, which they do
 				// even though 8x16 sprites exist, as background tiles are always 8x8).
 				//
-				// Since the sprites are effectively 1 bit deep, but 8 pixels wide, we 
+				// Since the sprites are effectively 1 bit deep, but 8 pixels wide, we
 				// can represent a whole sprite row as a single byte, so offsetting
-				// into the pattern memory is easy. In total there is 8KB so we need a 
+				// into the pattern memory is easy. In total there is 8KB so we need a
 				// 13 bit address.
 
-				// "(control.pattern_background << 12)"  : the pattern memory selector 
+				// "(control.pattern_background << 12)"  : the pattern memory selector
 				//                                         from control register, either 0K
 				//                                         or 4K offset
 				// "((uint16_t)bg_next_tile_id << 4)"    : the tile id multiplied by 16, as
@@ -932,8 +933,8 @@ void olc2C02::clock()
 				//                                         vertical scroll offset
 				// "+ 0"                                 : Mental clarity for plane offset
 				// Note: No PPU address bus offset required as it starts at 0x0000
-				bg_next_tile_lsb = ppuRead((control.pattern_background << 12) 
-					                       + ((uint16_t)bg_next_tile_id << 4) 
+				bg_next_tile_lsb = ppuRead((control.pattern_background << 12)
+					                       + ((uint16_t)bg_next_tile_id << 4)
 					                       + (vram_addr.fine_y) + 0);
 
 				break;
@@ -1028,7 +1029,7 @@ void olc2C02::clock()
 				// same height as the sprite, so check if it resides in the sprite vertically
 				// depending on the current "sprite height mode"
 				// FLAGGED
-				
+
 				if (diff >= 0 && diff < (control.sprite_size ? 16 : 8) && sprite_count < 8)
 				{
 					// Sprite is visible, so copy the attribute entry over to our
@@ -1039,13 +1040,13 @@ void olc2C02::clock()
 						// Is this sprite sprite zero?
 						if (nOAMEntry == 0)
 						{
-							// It is, so its possible it may trigger a 
+							// It is, so its possible it may trigger a
 							// sprite zero hit when drawn
 							bSpriteZeroHitPossible = true;
 						}
 
-						memcpy(&spriteScanline[sprite_count], &OAM[nOAMEntry], sizeof(sObjectAttributeEntry));						
-					}			
+						memcpy(&spriteScanline[sprite_count], &OAM[nOAMEntry], sizeof(sObjectAttributeEntry));
+					}
 					sprite_count++;
 				}
 				nOAMEntry++;
@@ -1054,17 +1055,17 @@ void olc2C02::clock()
 			// Set sprite overflow flag
 			status.sprite_overflow = (sprite_count >= 8);
 
-			// Now we have an array of the 8 visible sprites for the next scanline. By 
+			// Now we have an array of the 8 visible sprites for the next scanline. By
 			// the nature of this search, they are also ranked in priority, because
 			// those lower down in the OAM have the higher priority.
 
 			// We also guarantee that "Sprite Zero" will exist in spriteScanline[0] if
-			// it is evaluated to be visible. 
+			// it is evaluated to be visible.
 		}
 
 		if (cycle == 340)
 		{
-			// Now we're at the very end of the scanline, I'm going to prepare the 
+			// Now we're at the very end of the scanline, I'm going to prepare the
 			// sprite shifters with the 8 or less selected sprites.
 
 			for (uint8_t i = 0; i < sprite_count; i++)
@@ -1086,17 +1087,17 @@ void olc2C02::clock()
 					// 8x8 Sprite Mode - The control register determines the pattern table
 					if (!(spriteScanline[i].attribute & 0x80))
 					{
-						// Sprite is NOT flipped vertically, i.e. normal    
-						sprite_pattern_addr_lo = 
+						// Sprite is NOT flipped vertically, i.e. normal
+						sprite_pattern_addr_lo =
 						  (control.pattern_sprite << 12  )  // Which Pattern Table? 0KB or 4KB offset
 						| (spriteScanline[i].id   << 4   )  // Which Cell? Tile ID * 16 (16 bytes per tile)
 						| (scanline - spriteScanline[i].y); // Which Row in cell? (0->7)
-												
+
 					}
 					else
 					{
 						// Sprite is flipped vertically, i.e. upside down
-						sprite_pattern_addr_lo = 
+						sprite_pattern_addr_lo =
 						  (control.pattern_sprite << 12  )  // Which Pattern Table? 0KB or 4KB offset
 						| (spriteScanline[i].id   << 4   )  // Which Cell? Tile ID * 16 (16 bytes per tile)
 						| (7 - (scanline - spriteScanline[i].y)); // Which Row in cell? (7->0)
@@ -1112,7 +1113,7 @@ void olc2C02::clock()
 						if (scanline - spriteScanline[i].y < 8)
 						{
 							// Reading Top half Tile
-							sprite_pattern_addr_lo = 
+							sprite_pattern_addr_lo =
 							  ((spriteScanline[i].id & 0x01)      << 12)  // Which Pattern Table? 0KB or 4KB offset
 							| ((spriteScanline[i].id & 0xFE)      << 4 )  // Which Cell? Tile ID * 16 (16 bytes per tile)
 							| ((scanline - spriteScanline[i].y) & 0x07 ); // Which Row in cell? (0->7)
@@ -1120,7 +1121,7 @@ void olc2C02::clock()
 						else
 						{
 							// Reading Bottom Half Tile
-							sprite_pattern_addr_lo = 
+							sprite_pattern_addr_lo =
 							  ( (spriteScanline[i].id & 0x01)      << 12)  // Which Pattern Table? 0KB or 4KB offset
 							| (((spriteScanline[i].id & 0xFE) + 1) << 4 )  // Which Cell? Tile ID * 16 (16 bytes per tile)
 							| ((scanline - spriteScanline[i].y) & 0x07  ); // Which Row in cell? (0->7)
@@ -1132,7 +1133,7 @@ void olc2C02::clock()
 						if (scanline - spriteScanline[i].y < 8)
 						{
 							// Reading Top half Tile
-							sprite_pattern_addr_lo = 
+							sprite_pattern_addr_lo =
 							  ( (spriteScanline[i].id & 0x01)      << 12)    // Which Pattern Table? 0KB or 4KB offset
 							| (((spriteScanline[i].id & 0xFE) + 1) << 4 )    // Which Cell? Tile ID * 16 (16 bytes per tile)
 							| (7 - (scanline - spriteScanline[i].y) & 0x07); // Which Row in cell? (0->7)
@@ -1140,7 +1141,7 @@ void olc2C02::clock()
 						else
 						{
 							// Reading Bottom Half Tile
-							sprite_pattern_addr_lo = 
+							sprite_pattern_addr_lo =
 							  ((spriteScanline[i].id & 0x01)       << 12)    // Which Pattern Table? 0KB or 4KB offset
 							| ((spriteScanline[i].id & 0xFE)       << 4 )    // Which Cell? Tile ID * 16 (16 bytes per tile)
 							| (7 - (scanline - spriteScanline[i].y) & 0x07); // Which Row in cell? (0->7)
@@ -1148,7 +1149,7 @@ void olc2C02::clock()
 					}
 				}
 
-				// Phew... XD I'm absolutely certain you can use some fantastic bit 
+				// Phew... XD I'm absolutely certain you can use some fantastic bit
 				// manipulation to reduce all of that to a few one liners, but in this
 				// form it's easy to see the processes required for the different
 				// sizes and vertical orientations
@@ -1160,8 +1161,8 @@ void olc2C02::clock()
 				sprite_pattern_bits_lo = ppuRead(sprite_pattern_addr_lo);
 				sprite_pattern_bits_hi = ppuRead(sprite_pattern_addr_hi);
 
-				// If the sprite is flipped horizontally, we need to flip the 
-				// pattern bytes. 
+				// If the sprite is flipped horizontally, we need to flip the
+				// pattern bytes.
 				if (spriteScanline[i].attribute & 0x40)
 				{
 					// This little lambda function "flips" a byte
@@ -1206,7 +1207,7 @@ void olc2C02::clock()
 			// will be informed that rendering is complete so it can
 			// perform operations with the PPU knowing it wont
 			// produce visible artefacts
-			if (control.enable_nmi) 
+			if (control.enable_nmi)
 				nmi = true;
 		}
 	}
@@ -1219,7 +1220,7 @@ void olc2C02::clock()
 	uint8_t bg_pixel = 0x00;   // The 2-bit pixel to be rendered
 	uint8_t bg_palette = 0x00; // The 3-bit index of the palette the pixel indexes
 
-	// We only render backgrounds if the PPU is enabled to do so. Note if 
+	// We only render backgrounds if the PPU is enabled to do so. Note if
 	// background rendering is disabled, the pixel and palette combine
 	// to form 0x00. This will fall through the colour tables to yield
 	// the current background colour in effect
@@ -1233,8 +1234,8 @@ void olc2C02::clock()
 			// of pixels, permitting smooth scrolling
 			uint16_t bit_mux = 0x8000 >> fine_x;
 
-			// Select Plane pixels by extracting from the shifter 
-			// at the required location. 
+			// Select Plane pixels by extracting from the shifter
+			// at the required location.
 			uint8_t p0_pixel = (bg_shifter_pattern_lo & bit_mux) > 0;
 			uint8_t p1_pixel = (bg_shifter_pattern_hi & bit_mux) > 0;
 
@@ -1278,7 +1279,7 @@ void olc2C02::clock()
 					fg_pixel = (fg_pixel_hi << 1) | fg_pixel_lo;
 
 					// Extract the palette from the bottom two bits. Recall
-					// that foreground palettes are the latter 4 in the 
+					// that foreground palettes are the latter 4 in the
 					// palette memory.
 					fg_palette = (spriteScanline[i].attribute & 0x03) + 0x04;
 					fg_priority = (spriteScanline[i].attribute & 0x20) == 0;
@@ -1297,7 +1298,7 @@ void olc2C02::clock()
 					}
 				}
 			}
-		}		
+		}
 	}
 
 	// Now we have a background pixel and a foreground pixel. They need
@@ -1390,7 +1391,7 @@ void olc2C02::clock()
 			cart->GetMapper()->scanline();
 		}
 
-	
+
 
 	if (cycle >= 341)
 	{
